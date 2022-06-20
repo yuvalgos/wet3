@@ -10,8 +10,25 @@ from game_player import GamePlayer
 
 def compute_lspi_iteration(encoded_states, encoded_next_states, actions, rewards, done_flags, linear_policy, gamma):
     # compute the next w given the data.
-    assert False, "implement compute_lspi_iteration function"
-    return next_w
+    N = encoded_states.shape[0]
+
+    phi_s_a = np.zeros((encoded_states.shape[0], 3*encoded_states.shape[1] + 3))
+    for i, a in enumerate(actions):
+        phi_s_a[i, a*(encoded_states.shape[1]+1): (a+1)*encoded_states.shape[1] + a] = encoded_states[i]
+        phi_s_a[i, (a+1)*encoded_states.shape[1] + a] = 1
+
+    phi_s_a_next = np.zeros((encoded_next_states.shape[0], 3*encoded_next_states.shape[1] + 3))
+    linear_policy_next = linear_policy.get_max_action(encoded_next_states)
+    for i, a in enumerate(linear_policy_next):
+        phi_s_a_next[i, a*(encoded_next_states.shape[1]+1): (a+1)*encoded_next_states.shape[1] + a] = encoded_next_states[i]
+        phi_s_a_next[i, (a+1)*encoded_next_states.shape[1] + a] = 1
+
+    A = (1/N) * phi_s_a.T @ (phi_s_a - gamma * phi_s_a_next)
+    b = (1/N) * np.sum(np.expand_dims(rewards, axis=-1) * phi_s_a, axis=0)
+
+    next_w = np.linalg.solve(A, b)
+
+    return np.expand_dims(next_w, axis=-1)
 
 
 if __name__ == '__main__':
@@ -19,13 +36,13 @@ if __name__ == '__main__':
     # samples_to_collect = 150000
     # samples_to_collect = 10000
     number_of_kernels_per_dim = [12, 10]
-    gamma = 0.99
-    w_updates = 100
-    evaluation_number_of_games = 10
+    gamma = 0.999
+    w_updates = 20
+    evaluation_number_of_games = 50
     evaluation_max_steps_per_game = 1000
 
     np.random.seed(123)
-    # np.random.seed(234)
+    np.random.seed(42)
 
     env = MountainCarWithResetEnv()
     # collect data

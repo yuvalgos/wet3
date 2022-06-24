@@ -152,7 +152,7 @@ def run_different_num_of_samples():
     plt.ylabel('success rate')
     plt.xscale('log')
     plt.show()
-    pass
+
 
 if __name__ == '__main__':
     run_3_seeds_and_evaluate()
